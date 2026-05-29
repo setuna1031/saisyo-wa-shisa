@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1f8a5b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="最初はシーサー！！">
+    <title>最初はシーサー！！</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./icon.svg">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="kicker">今日のサッカー</p>
+          <h1>最初はシーサー！！</h1>
+        </div>
+        <div class="status-pill" id="todayLabel"></div>
+      </header>
+
+      <section class="daily-strip" aria-label="今日の進み具合">
+        <div>
+          <span>今日</span>
+          <strong id="todayStatus">まだ</strong>
+        </div>
+        <div>
+          <span>今週</span>
+          <strong id="weekCount">0回</strong>
+        </div>
+        <div class="daily-message" id="dailyMessage">1つできたら成功</div>
+      </section>
+
+      <nav class="tabbar" aria-label="画面切り替え">
+        <button class="tab-button active" type="button" data-tab="today">今日</button>
+        <button class="tab-button" type="button" data-tab="video">まねする</button>
+        <button class="tab-button" type="button" data-tab="quiz">クイズ</button>
+        <button class="tab-button" type="button" data-tab="logs">ログ</button>
+      </nav>
+
+      <section class="screen active" id="screen-today">
+        <section class="panel">
+          <div class="field-group">
+            <div class="field-title">時間</div>
+            <div class="segmented" data-group="minutes">
+              <button class="choice active" type="button" data-value="5">5分</button>
+              <button class="choice" type="button" data-value="8">8分</button>
+              <button class="choice" type="button" data-value="10">10分</button>
+              <button class="choice" type="button" data-value="20">20分</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">場所</div>
+            <div class="segmented two" data-group="place">
+              <button class="choice active" type="button" data-value="road">家の前</button>
+              <button class="choice" type="button" data-value="horiko">ほりこう</button>
+              <button class="choice" type="button" data-value="school">学校</button>
+              <button class="choice" type="button" data-value="other">その他</button>
+            </div>
+          </div>
+
+          <div class="conditional-panel" id="otherPlacePanel" hidden>
+            <label class="text-field">
+              <span>場所の名前</span>
+              <input id="otherPlaceName" type="text" placeholder="例: 近くの広場">
+            </label>
+
+            <div class="field-group">
+              <div class="field-title">広さ</div>
+              <div class="segmented three" data-group="otherSpace">
+                <button class="choice active" type="button" data-value="small">せまい</button>
+                <button class="choice" type="button" data-value="normal">ふつう</button>
+                <button class="choice" type="button" data-value="wide">広い</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-title">人の多さ</div>
+              <div class="segmented three" data-group="otherCrowd">
+                <button class="choice active" type="button" data-value="few">少ない</button>
+                <button class="choice" type="button" data-value="normal">ふつう</button>
+                <button class="choice" type="button" data-value="many">多い</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-title">キック</div>
+              <div class="segmented three" data-group="otherKick">
+                <button class="choice active" type="button" data-value="none">できない</button>
+                <button class="choice" type="button" data-value="pass">短いパス</button>
+                <button class="choice" type="button" data-value="light">軽くOK</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-title">リフティング</div>
+              <div class="segmented two" data-group="otherLift">
+                <button class="choice active" type="button" data-value="no">できない</button>
+                <button class="choice" type="button" data-value="yes">できる</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">気分</div>
+            <div class="segmented" data-group="mood">
+              <button class="choice active" type="button" data-value="good">やる気</button>
+              <button class="choice" type="button" data-value="normal">ふつう</button>
+              <button class="choice" type="button" data-value="tired">つかれた</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">今日のテーマ</div>
+            <div class="segmented two" data-group="focus">
+              <button class="choice active" type="button" data-value="dribble">ドリブル</button>
+              <button class="choice" type="button" data-value="instep">インステップ</button>
+              <button class="choice" type="button" data-value="light">軽め</button>
+              <button class="choice" type="button" data-value="mix">おまかせ</button>
+            </div>
+          </div>
+
+          <label class="checkline">
+            <input type="checkbox" id="painCheck">
+            <span>痛み・めまい・気持ち悪さがある</span>
+          </label>
+
+          <button class="primary-action" id="makePlan" type="button">メニューを作る</button>
+        </section>
+
+        <section class="result-panel" id="planResult" aria-live="polite"></section>
+
+        <section class="timer-panel" id="timerPanel" hidden>
+          <div class="section-head">
+            <h2>タイマー</h2>
+            <span id="timerStepCount">1/4</span>
+          </div>
+          <div class="timer-card" id="timerCard">
+            <p id="timerStatus">スタートを押してね</p>
+            <strong id="timerStepName">からだを起こす</strong>
+            <div class="timer-display" id="timerDisplay">0:00</div>
+            <p id="timerStepPoint">息が上がりすぎない強さにする。</p>
+          </div>
+          <div class="timer-actions">
+            <button class="primary-action" id="timerStart" type="button">スタート</button>
+            <button class="secondary-action" id="timerPause" type="button">止める</button>
+            <button class="secondary-action" id="timerNext" type="button">次へ</button>
+            <button class="small-button" id="timerReset" type="button">リセット</button>
+          </div>
+        </section>
+
+        <section class="panel compact">
+          <div class="section-head">
+            <h2>今日のログ</h2>
+            <span id="logHint">未保存</span>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">楽しさ</div>
+            <div class="segmented three" data-log="fun">
+              <button class="choice active" type="button" data-value="たのしい">たのしい</button>
+              <button class="choice" type="button" data-value="ふつう">ふつう</button>
+              <button class="choice" type="button" data-value="いまいち">いまいち</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">疲れ</div>
+            <div class="segmented three" data-log="tired">
+              <button class="choice active" type="button" data-value="げんき">げんき</button>
+              <button class="choice" type="button" data-value="少しつかれた">少しつかれた</button>
+              <button class="choice" type="button" data-value="つかれた">つかれた</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">できたこと</div>
+            <div class="segmented two" data-log="done">
+              <button class="choice active" type="button" data-value="ボールにたくさんさわれた">たくさんさわれた</button>
+              <button class="choice" type="button" data-value="ドリブルできた">ドリブル</button>
+              <button class="choice" type="button" data-value="パスできた">パス</button>
+              <button class="choice" type="button" data-value="足の甲に当たった">足の甲</button>
+              <button class="choice" type="button" data-value="リフティングできた">リフティング</button>
+              <button class="choice" type="button" data-value="最後までできた">最後まで</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">次に試すこと</div>
+            <div class="segmented two" data-log="next">
+              <button class="choice active" type="button" data-value="顔を上げる">顔を上げる</button>
+              <button class="choice" type="button" data-value="ボールを近くに置く">近くに置く</button>
+              <button class="choice" type="button" data-value="つま先を下げる">つま先</button>
+              <button class="choice" type="button" data-value="足の甲をかたくする">足の甲</button>
+              <button class="choice" type="button" data-value="やさしくパスする">やさしくパス</button>
+              <button class="choice" type="button" data-value="また同じ練習をする">また同じ</button>
+            </div>
+          </div>
+
+          <label class="text-field">
+            <span>ひとことメモ</span>
+            <input id="memoInput" type="text" placeholder="例: 朝はやる気あり">
+          </label>
+
+          <button class="secondary-action" id="saveLog" type="button">ログを保存</button>
+        </section>
+      </section>
+
+      <section class="screen" id="screen-video">
+        <section class="panel">
+          <div class="section-head">
+            <h2>まねする</h2>
+            <span>1つだけ</span>
+          </div>
+          <label class="text-field">
+            <span>まねした動き</span>
+            <input id="mimicMove" type="text" placeholder="例: シザース、切り返し">
+          </label>
+
+          <div class="field-group">
+            <div class="field-title">どこをまねした？</div>
+            <div class="segmented two" data-mimic="watch">
+              <button class="choice active" type="button" data-value="足">足</button>
+              <button class="choice" type="button" data-value="体">体</button>
+              <button class="choice" type="button" data-value="ボール">ボール</button>
+              <button class="choice" type="button" data-value="リズム">リズム</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">やってみた結果</div>
+            <div class="segmented two" data-mimic="result">
+              <button class="choice active" type="button" data-value="できた">できた</button>
+              <button class="choice" type="button" data-value="少しできた">少しできた</button>
+              <button class="choice" type="button" data-value="むずかしい">むずかしい</button>
+              <button class="choice" type="button" data-value="またやりたい">またやりたい</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">気づいたこと</div>
+            <div class="segmented two" data-mimic="notice">
+              <button class="choice active" type="button" data-value="ゆっくりならできた">ゆっくり</button>
+              <button class="choice" type="button" data-value="足が分からなかった">足がむずかしい</button>
+              <button class="choice" type="button" data-value="体の向きがむずかしい">体の向き</button>
+              <button class="choice" type="button" data-value="ボールが遠くなった">ボールが遠い</button>
+              <button class="choice" type="button" data-value="楽しかった">楽しかった</button>
+              <button class="choice" type="button" data-value="もう一回やりたい">もう一回</button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">次にまねすること</div>
+            <div class="segmented two" data-mimic="next">
+              <button class="choice active" type="button" data-value="足だけ">足だけ</button>
+              <button class="choice" type="button" data-value="体の向き">体の向き</button>
+              <button class="choice" type="button" data-value="ボールを近くに置く">ボール近く</button>
+              <button class="choice" type="button" data-value="ゆっくりやる">ゆっくり</button>
+            </div>
+          </div>
+
+          <label class="text-field">
+            <span>ひとことメモ</span>
+            <input id="mimicMemo" type="text" placeholder="例: 右足がむずかしかった">
+          </label>
+
+          <button class="primary-action" id="makeVideoMemo" type="button">分けて見る</button>
+          <button class="secondary-action" id="saveMimicLog" type="button">まねログを保存</button>
+        </section>
+        <section class="result-panel" id="videoResult"></section>
+      </section>
+
+      <section class="screen" id="screen-quiz">
+        <section class="panel">
+          <div class="section-head">
+            <h2>クイズ</h2>
+            <span id="quizProgress">5問</span>
+          </div>
+
+          <div class="field-group">
+            <div class="field-title">カテゴリ</div>
+            <div class="segmented quiz-categories" data-quiz-category>
+              <button class="choice active" type="button" data-value="position">ポジション</button>
+              <button class="choice" type="button" data-value="rules">ルール</button>
+              <button class="choice" type="button" data-value="movement">動き方</button>
+              <button class="choice" type="button" data-value="mindset">考え方</button>
+              <button class="choice" type="button" data-value="safety">安全</button>
+            </div>
+          </div>
+
+          <button class="primary-action" id="startQuiz" type="button">5問スタート</button>
+        </section>
+
+        <section class="quiz-panel" id="quizPanel" hidden>
+          <div class="quiz-question">
+            <span id="quizQuestionCount">1/5</span>
+            <h2 id="quizQuestionText"></h2>
+          </div>
+          <div class="quiz-choices" id="quizChoices"></div>
+          <div class="quiz-feedback" id="quizFeedback" hidden></div>
+          <div class="timer-actions">
+            <button class="secondary-action" id="nextQuiz" type="button" hidden>次の問題</button>
+            <button class="secondary-action" id="saveQuizLog" type="button" hidden>結果をログに保存</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="screen" id="screen-logs">
+        <section class="panel compact">
+          <div class="section-head">
+            <h2>保存したログ</h2>
+            <span id="logManageHint">選択なし</span>
+          </div>
+          <div class="log-actions">
+            <button class="small-button" id="exportCsv" type="button">CSV</button>
+            <button class="small-button" id="deleteSelectedLogs" type="button">選択を消す</button>
+            <button class="small-button danger" id="clearLogs" type="button">全部消す</button>
+          </div>
+          <div class="confirm-panel" id="logConfirm" hidden>
+            <p id="logConfirmText">ログを消しますか？</p>
+            <div class="confirm-actions">
+              <button class="small-button" id="cancelDelete" type="button">やめる</button>
+              <button class="small-button danger-fill" id="confirmDelete" type="button">消す</button>
+            </div>
+          </div>
+          <div class="log-list" id="logList"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./quiz-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
