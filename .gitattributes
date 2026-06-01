@@ -1,2 +1,2 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Keep web app files stable across Windows/GitHub Pages.
+* text=auto eol=lf

@@ -32,6 +32,13 @@ const quizState = {
   answered: false,
 };
 
+const offsideState = {
+  index: 0,
+  answered: false,
+  lineVisible: false,
+  timeouts: [],
+};
+
 const timerState = {
   steps: [],
   index: 0,
@@ -93,6 +100,302 @@ const quizChoices = document.querySelector("#quizChoices");
 const quizFeedback = document.querySelector("#quizFeedback");
 const nextQuizButton = document.querySelector("#nextQuiz");
 const saveQuizLogButton = document.querySelector("#saveQuizLog");
+const offsideBoard = document.querySelector("#offsideBoard");
+const offsideJudgeTag = document.querySelector("#offsideJudgeTag");
+const offsideLine = document.querySelector("#offsideLine");
+const offsideStep = document.querySelector("#offsideStep");
+const offsideQuestion = document.querySelector("#offsideQuestion");
+const offsideFeedback = document.querySelector("#offsideFeedback");
+const offsideAnswerOff = document.querySelector("#offsideAnswerOff");
+const offsideAnswerSafe = document.querySelector("#offsideAnswerSafe");
+const offsideLineToggle = document.querySelector("#offsideLineToggle");
+const playOffsideButton = document.querySelector("#playOffside");
+const resetOffsideButton = document.querySelector("#resetOffside");
+const nextOffsideButton = document.querySelector("#nextOffside");
+const offsideQuizCount = document.querySelector("#offsideQuizCount");
+
+const offsideScenes = [
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 72,
+    passer: { x: 37, y: 68 },
+    receiver: { x: 83, y: 32 },
+    ballMid: { x: 58, y: 46 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 72, y: 58 }, { x: 62, y: 29 }, { x: 55, y: 78 }],
+    question: "パスの瞬間、受ける子が2人目の相手より前で待っている。これは？",
+    title: "前で待っている",
+    copy: "相手ゴールに近い方から2人目より前にいるので、オフサイドになりやすい。",
+    note: "キーパーだけではなく、相手を全部見て2人目を探すよ。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 72,
+    passer: { x: 36, y: 66 },
+    receiver: { x: 64, y: 34 },
+    ballMid: { x: 51, y: 42 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 72, y: 58 }, { x: 60, y: 16 }, { x: 55, y: 78 }],
+    question: "パスの瞬間、受ける子が2人目の相手より後ろにいる。これは？",
+    title: "後ろから走り出す",
+    copy: "パスの瞬間にラインより後ろなら、前へ走って受けてもセーフ。",
+    note: "前で待つより、パスが出てから走ると分かりやすいね。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 70,
+    passer: { x: 32, y: 66 },
+    receiver: { x: 45, y: 34 },
+    ballMid: { x: 40, y: 48 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 70, y: 58 }, { x: 62, y: 24 }, { x: 55, y: 76 }],
+    question: "受ける子が自分の陣地にいる。これは？",
+    title: "自分の陣地",
+    copy: "自分の陣地にいる時は、相手より前でもオフサイドにならない。",
+    note: "まず半分の線を見る。自分側ならセーフと覚えよう。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 70,
+    passer: { x: 74, y: 68 },
+    receiver: { x: 62, y: 34 },
+    ballMid: { x: 67, y: 48 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 70, y: 58 }, { x: 58, y: 16 }, { x: 55, y: 78 }],
+    question: "受ける子がボールより後ろにいる。これは？",
+    title: "ボールより後ろ",
+    copy: "ボールより後ろで受ける時は、相手ラインより前に見えてもセーフ。",
+    note: "オフサイドは相手だけでなく、ボールの場所も見るよ。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 72,
+    passer: { x: 35, y: 10 },
+    receiver: { x: 82, y: 34 },
+    ballMid: { x: 62, y: 18 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 72, y: 58 }, { x: 62, y: 25 }, { x: 55, y: 78 }],
+    question: "スローインから直接受けた。これは？",
+    title: "スローイン",
+    copy: "スローインから直接受ける時は、前にいてもオフサイドはない。",
+    note: "例外は少しずつでOK。まずスローインはセーフと覚えよう。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 72,
+    passer: { x: 24, y: 77 },
+    receiver: { x: 82, y: 33 },
+    ballMid: { x: 52, y: 84 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 72, y: 58 }, { x: 61, y: 25 }, { x: 55, y: 76 }],
+    question: "コーナーキックから直接受けた。これは？",
+    title: "コーナーキック",
+    copy: "コーナーキックから直接受ける時も、オフサイドはない。",
+    note: "スローイン、ゴールキック、コーナーキックは直接ならセーフ。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 72,
+    passer: { x: 20, y: 52 },
+    receiver: { x: 80, y: 34 },
+    ballMid: { x: 50, y: 18 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 72, y: 58 }, { x: 61, y: 25 }, { x: 55, y: 76 }],
+    question: "ゴールキックから直接受けた。これは？",
+    title: "ゴールキック",
+    copy: "ゴールキックから直接受ける時は、前にいてもオフサイドはない。",
+    note: "ルールの例外。試合で見たら「あ、これはセーフ」と思い出そう。",
+  },
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 84,
+    passer: { x: 39, y: 66 },
+    receiver: { x: 90, y: 33 },
+    ballMid: { x: 61, y: 44 },
+    keeper: { x: 64, y: 50 },
+    defenders: [{ x: 94, y: 42 }, { x: 84, y: 62 }, { x: 58, y: 76 }],
+    question: "GKが前に出ていて、後ろに守備が2人いる。受ける子はその2人目より前。これは？",
+    title: "GKが前に出た場面",
+    copy: "GKが前にいても、相手をゴールに近い方から数えて2人目がラインになる。",
+    note: "GKが最後とは限らない。相手全員を数えるのが大事。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 84,
+    passer: { x: 39, y: 66 },
+    receiver: { x: 78, y: 34 },
+    ballMid: { x: 58, y: 45 },
+    keeper: { x: 64, y: 50 },
+    defenders: [{ x: 94, y: 42 }, { x: 84, y: 62 }, { x: 58, y: 76 }],
+    question: "GKが前に出ていて、後ろの守備2人目より後ろから受ける。これは？",
+    title: "GKが前でも後ろならOK",
+    copy: "2人目の相手より後ろにいるのでセーフ。",
+    note: "GKの場所より、ゴールに近い相手を2人見る。",
+  },
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 66,
+    passer: { x: 36, y: 66 },
+    receiver: { x: 78, y: 35 },
+    ballMid: { x: 56, y: 45 },
+    keeper: { x: 66, y: 52 },
+    defenders: [{ x: 94, y: 44 }, { x: 60, y: 24 }, { x: 55, y: 76 }],
+    question: "ゴール前に守備が1人、GKが2人目になっている。受ける子はGKより前。これは？",
+    title: "2人目がGKになることもある",
+    copy: "GKが前に出て、GKが2人目の相手になる場面もある。",
+    note: "名前ではなく場所で数える。2人目より前ならオフサイドになりやすい。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 66,
+    passer: { x: 36, y: 66 },
+    receiver: { x: 60, y: 34 },
+    ballMid: { x: 49, y: 45 },
+    keeper: { x: 66, y: 52 },
+    defenders: [{ x: 94, y: 44 }, { x: 58, y: 16 }, { x: 55, y: 76 }],
+    question: "GKが2人目の相手。受ける子はGKより後ろにいる。これは？",
+    title: "2人目より後ろ",
+    copy: "2人目の相手より後ろにいるのでセーフ。",
+    note: "GKが前に出た時こそ、2人目を落ち着いて探そう。",
+  },
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 75,
+    passer: { x: 42, y: 74 },
+    receiver: { x: 86, y: 25 },
+    ballMid: { x: 62, y: 38 },
+    keeper: { x: 95, y: 50 },
+    defenders: [{ x: 75, y: 58 }, { x: 62, y: 17 }, { x: 58, y: 80 }],
+    question: "味方が横にパス。受ける子が2人目の相手より前で待つ。これは？",
+    title: "横パスでも位置を見る",
+    copy: "パスの向きより、パスの瞬間の場所を見る。",
+    note: "前にけったかどうかだけでは決まらないよ。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 75,
+    passer: { x: 84, y: 68 },
+    receiver: { x: 70, y: 30 },
+    ballMid: { x: 77, y: 45 },
+    keeper: { x: 95, y: 50 },
+    defenders: [{ x: 75, y: 58 }, { x: 66, y: 32 }, { x: 58, y: 80 }],
+    question: "味方が後ろにパス。受ける子はボールより後ろ。これは？",
+    title: "後ろへのパス",
+    copy: "ボールより後ろで受けるのでセーフ。",
+    note: "相手ゴールに近すぎる場所で待っているかを見よう。",
+  },
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 68,
+    passer: { x: 34, y: 64 },
+    receiver: { x: 80, y: 72 },
+    ballMid: { x: 55, y: 80 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 68, y: 43 }, { x: 60, y: 22 }, { x: 56, y: 80 }],
+    question: "受ける子が下の広い場所で、2人目の相手より前。これは？",
+    title: "広い場所で待っている",
+    copy: "守備から離れていても、2人目より前ならオフサイドになりやすい。",
+    note: "近くに守備がいるかではなく、ラインより前かを見る。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 68,
+    passer: { x: 34, y: 64 },
+    receiver: { x: 66, y: 72 },
+    ballMid: { x: 50, y: 84 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 68, y: 43 }, { x: 60, y: 22 }, { x: 56, y: 80 }],
+    question: "受ける子が2人目の相手とほぼ同じ高さ。これは？",
+    title: "同じ高さ",
+    copy: "2人目の相手と同じ高さならセーフ。",
+    note: "前に出すぎていなければOK。",
+  },
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 73,
+    passer: { x: 41, y: 36 },
+    receiver: { x: 85, y: 62 },
+    ballMid: { x: 62, y: 52 },
+    keeper: { x: 95, y: 50 },
+    defenders: [{ x: 73, y: 36 }, { x: 64, y: 22 }, { x: 56, y: 78 }],
+    question: "パスが出た瞬間は前にいて、そのあと戻って受けた。これは？",
+    title: "戻って受けても瞬間を見る",
+    copy: "判定はパスが出た瞬間の場所で見る。",
+    note: "あとから戻っても、最初に前で待っていたらオフサイドになりやすい。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 73,
+    passer: { x: 41, y: 36 },
+    receiver: { x: 63, y: 62 },
+    ballMid: { x: 53, y: 50 },
+    keeper: { x: 95, y: 50 },
+    defenders: [{ x: 73, y: 36 }, { x: 64, y: 22 }, { x: 56, y: 78 }],
+    question: "パスの瞬間は後ろ、そのあと前へ走った。これは？",
+    title: "走り出しはセーフ",
+    copy: "パスの瞬間にラインより後ろなら、前へ走って受けてもセーフ。",
+    note: "いい飛び出しは、パスが出てから走る動きだね。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 71,
+    passer: { x: 30, y: 32 },
+    receiver: { x: 49, y: 70 },
+    ballMid: { x: 41, y: 52 },
+    keeper: { x: 94, y: 50 },
+    defenders: [{ x: 71, y: 42 }, { x: 61, y: 20 }, { x: 58, y: 84 }],
+    question: "相手陣地に入る前、自分の陣地から受ける。これは？",
+    title: "自分の陣地から受ける",
+    copy: "自分の陣地にいる時はオフサイドにならない。",
+    note: "半分の線より自分側ならセーフ。",
+  },
+  {
+    tag: "オフサイド",
+    safe: false,
+    lineX: 77,
+    passer: { x: 43, y: 70 },
+    receiver: { x: 88, y: 48 },
+    ballMid: { x: 64, y: 58 },
+    keeper: { x: 96, y: 50 },
+    defenders: [{ x: 77, y: 32 }, { x: 70, y: 66 }, { x: 56, y: 82 }],
+    question: "受ける子がゴールに近い場所で待ち、2人目の相手より前。これは？",
+    title: "ゴール前で待つ",
+    copy: "2人目の相手よりゴールに近いので、オフサイドになりやすい。",
+    note: "「相手2人より前で待たない」を合言葉にしよう。",
+  },
+  {
+    tag: "セーフ",
+    safe: true,
+    lineX: 77,
+    passer: { x: 43, y: 70 },
+    receiver: { x: 76, y: 48 },
+    ballMid: { x: 60, y: 58 },
+    keeper: { x: 96, y: 50 },
+    defenders: [{ x: 77, y: 32 }, { x: 70, y: 66 }, { x: 56, y: 82 }],
+    question: "受ける子が2人目の相手と同じくらいの場所から出る。これは？",
+    title: "同じくらいならOK",
+    copy: "2人目の相手より前に出ていなければセーフ。",
+    note: "ぴったり同じ高さはセーフ。大事なのは前に出すぎないこと。",
+  },
+];
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -178,6 +481,7 @@ function setupChoices() {
       item.classList.toggle("active", item === button);
     });
   });
+
 }
 
 function saveSettings() {
@@ -579,16 +883,16 @@ function ensureAudio() {
   return timerState.audioContext;
 }
 
-function beep(frequency = 880, duration = 0.12, delay = 0) {
+function beep(frequency = 880, duration = 0.12, delay = 0, volume = 0.55, type = "sine") {
   const audioContext = ensureAudio();
   if (!audioContext) return;
   const startAt = audioContext.currentTime + delay;
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
   oscillator.frequency.value = frequency;
-  oscillator.type = "sine";
+  oscillator.type = type;
   gain.gain.setValueAtTime(0.0001, startAt);
-  gain.gain.exponentialRampToValueAtTime(0.18, startAt + 0.01);
+  gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
   oscillator.connect(gain);
   gain.connect(audioContext.destination);
@@ -597,12 +901,23 @@ function beep(frequency = 880, duration = 0.12, delay = 0) {
 }
 
 function playWarningSound() {
-  beep(880, 0.1);
+  beep(880, 0.12, 0, 0.62, "triangle");
+  beep(880, 0.12, 0.18, 0.62, "triangle");
 }
 
 function playDoneSound() {
-  beep(660, 0.12);
-  beep(990, 0.12, 0.16);
+  beep(660, 0.16, 0, 0.65, "triangle");
+  beep(880, 0.16, 0.18, 0.65, "triangle");
+  beep(1040, 0.22, 0.36, 0.68, "triangle");
+}
+
+function playCorrectSound() {
+  beep(784, 0.11, 0, 0.58, "triangle");
+  beep(1046, 0.16, 0.13, 0.62, "triangle");
+}
+
+function playWrongSound() {
+  beep(220, 0.24, 0, 0.58, "sawtooth");
 }
 
 function startTimer() {
@@ -975,6 +1290,144 @@ function renderVideoMemo() {
   `;
 }
 
+function renderOffsideScene() {
+  const scene = currentOffsideScene();
+  clearOffsideTimers();
+  offsideState.answered = false;
+  offsideBoard.classList.remove("playing");
+  offsideBoard.classList.toggle("safe-scene", scene.safe);
+  offsideBoard.classList.toggle("offside-scene", !scene.safe);
+  offsideBoard.style.setProperty("--line-x", `${scene.lineX}%`);
+  offsideBoard.style.setProperty("--passer-x", `${scene.passer.x}%`);
+  offsideBoard.style.setProperty("--passer-y", `${scene.passer.y}%`);
+  offsideBoard.style.setProperty("--receiver-x", `${scene.receiver.x}%`);
+  offsideBoard.style.setProperty("--receiver-y", `${scene.receiver.y}%`);
+  offsideBoard.style.setProperty("--ball-mid-x", `${scene.ballMid.x}%`);
+  offsideBoard.style.setProperty("--ball-mid-y", `${scene.ballMid.y}%`);
+  scene.defenders.forEach((defender, index) => {
+    const number = index + 1;
+    offsideBoard.style.setProperty(`--defender-${number}-x`, `${defender.x}%`);
+    offsideBoard.style.setProperty(`--defender-${number}-y`, `${defender.y}%`);
+  });
+  offsideBoard.style.setProperty("--keeper-x", `${scene.keeper.x}%`);
+  offsideBoard.style.setProperty("--keeper-y", `${scene.keeper.y}%`);
+  offsideLine.querySelector("span").textContent = "2人目の相手";
+  offsideJudgeTag.textContent = "考えてみよう";
+  offsideQuestion.textContent = scene.question;
+  offsideQuizCount.textContent = `全${offsideScenes.length}問`;
+  offsideStep.innerHTML = `
+    <strong>これはどっち？</strong>
+    <p>まずは答えを選ぼう。ラインはあとでONにして確認できるよ。</p>
+  `;
+  setOffsideLineVisible(false);
+  playOffsideButton.disabled = true;
+  resetOffsideButton.disabled = true;
+  nextOffsideButton.disabled = true;
+  resetOffsideAnswers();
+}
+
+function playOffsideScene() {
+  if (!offsideState.answered) return;
+  const scene = currentOffsideScene();
+  clearOffsideTimers();
+  offsideBoard.classList.remove("playing");
+  offsideBoard.offsetHeight;
+  offsideBoard.classList.add("playing");
+  offsideStep.innerHTML = `
+    <strong>1. ボールをける瞬間</strong>
+    <p>ここで受ける子の場所をチェックする。</p>
+  `;
+  offsideState.timeouts.push(
+    setTimeout(() => {
+      offsideStep.innerHTML = `
+        <strong>2. ラインとくらべる</strong>
+        <p>${escapeHtml(scene.copy)}</p>
+      `;
+    }, 900),
+  );
+  offsideState.timeouts.push(
+    setTimeout(() => {
+      offsideStep.innerHTML = `
+        <strong>3. 判定は${escapeHtml(scene.tag)}</strong>
+        <p>${escapeHtml(scene.note)}</p>
+      `;
+    }, 1800),
+  );
+}
+
+function answerOffsideQuiz(answer) {
+  if (offsideState.answered) return;
+  const scene = currentOffsideScene();
+  const correct = answer === (scene.safe ? "safe" : "offside");
+  offsideState.answered = true;
+  if (correct) {
+    playCorrectSound();
+  } else {
+    playWrongSound();
+  }
+
+  offsideAnswerOff.disabled = true;
+  offsideAnswerSafe.disabled = true;
+  offsideAnswerOff.classList.toggle("correct", !scene.safe);
+  offsideAnswerSafe.classList.toggle("correct", scene.safe);
+  if (!correct) {
+    (answer === "offside" ? offsideAnswerOff : offsideAnswerSafe).classList.add("wrong");
+  }
+
+  offsideFeedback.hidden = false;
+  offsideFeedback.innerHTML = `
+    <strong>${correct ? "正解！" : "おしい！"}</strong>
+    <p>${escapeHtml(scene.note)}</p>
+  `;
+  offsideJudgeTag.textContent = scene.tag;
+  offsideStep.innerHTML = `
+    <strong>${escapeHtml(scene.title)}: ${escapeHtml(scene.tag)}</strong>
+    <p>${escapeHtml(scene.copy)}</p>
+  `;
+  setOffsideLineVisible(true);
+  playOffsideButton.disabled = false;
+  resetOffsideButton.disabled = false;
+  nextOffsideButton.disabled = false;
+}
+
+function resetOffsideAnswers() {
+  [offsideAnswerOff, offsideAnswerSafe].forEach((button) => {
+    button.disabled = false;
+    button.classList.remove("correct", "wrong");
+  });
+  offsideFeedback.hidden = true;
+  offsideFeedback.innerHTML = "";
+}
+
+function clearOffsideTimers() {
+  offsideState.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+  offsideState.timeouts = [];
+}
+
+function currentOffsideScene() {
+  return offsideScenes[offsideState.index];
+}
+
+function setOffsideLineVisible(visible) {
+  offsideState.lineVisible = visible;
+  offsideLineToggle.checked = visible;
+  offsideBoard.classList.toggle("show-line", visible);
+}
+
+function nextOffsideQuestion() {
+  const currentIndex = offsideState.index;
+  if (offsideScenes.length <= 1) {
+    renderOffsideScene();
+    return;
+  }
+  let nextIndex = currentIndex;
+  while (nextIndex === currentIndex) {
+    nextIndex = Math.floor(Math.random() * offsideScenes.length);
+  }
+  offsideState.index = nextIndex;
+  renderOffsideScene();
+}
+
 function startQuiz() {
   const pool = QUIZ_QUESTIONS.filter((question) => question.category === quizState.category);
   quizState.questions = shuffle(pool).slice(0, 5);
@@ -1017,6 +1470,11 @@ function answerQuiz(choiceIndex) {
   const correct = choiceIndex === question.answerIndex;
   quizState.answered = true;
   if (correct) quizState.score += 1;
+  if (correct) {
+    playCorrectSound();
+  } else {
+    playWrongSound();
+  }
 
   quizChoices.querySelectorAll(".quiz-choice").forEach((button) => {
     const index = Number(button.dataset.index);
@@ -1063,6 +1521,12 @@ function setupActions() {
   document.querySelector("#saveLog").addEventListener("click", saveLog);
   document.querySelector("#makeVideoMemo").addEventListener("click", renderVideoMemo);
   document.querySelector("#saveMimicLog").addEventListener("click", saveMimicLog);
+  document.querySelector("#playOffside").addEventListener("click", playOffsideScene);
+  document.querySelector("#resetOffside").addEventListener("click", playOffsideScene);
+  document.querySelector("#nextOffside").addEventListener("click", nextOffsideQuestion);
+  offsideLineToggle.addEventListener("change", () => setOffsideLineVisible(offsideLineToggle.checked));
+  document.querySelector("#offsideAnswerOff").addEventListener("click", () => answerOffsideQuiz("offside"));
+  document.querySelector("#offsideAnswerSafe").addEventListener("click", () => answerOffsideQuiz("safe"));
   document.querySelector("#startQuiz").addEventListener("click", startQuiz);
   document.querySelector("#nextQuiz").addEventListener("click", nextQuiz);
   document.querySelector("#saveQuizLog").addEventListener("click", saveQuizLog);
@@ -1100,6 +1564,7 @@ setupChoices();
 setupActions();
 updateOtherPanel();
 renderPlan();
+renderOffsideScene();
 updateDailyStats();
 
 if ("serviceWorker" in navigator) {

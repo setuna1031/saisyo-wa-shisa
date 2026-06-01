@@ -37,6 +37,7 @@
       <nav class="tabbar" aria-label="画面切り替え">
         <button class="tab-button active" type="button" data-tab="today">今日</button>
         <button class="tab-button" type="button" data-tab="video">まねする</button>
+        <button class="tab-button" type="button" data-tab="rules">ルール</button>
         <button class="tab-button" type="button" data-tab="quiz">クイズ</button>
         <button class="tab-button" type="button" data-tab="logs">ログ</button>
       </nav>
@@ -272,6 +273,59 @@
           <button class="secondary-action" id="saveMimicLog" type="button">まねログを保存</button>
         </section>
         <section class="result-panel" id="videoResult"></section>
+      </section>
+
+      <section class="screen" id="screen-rules">
+        <section class="panel">
+          <div class="section-head">
+            <h2>オフサイド</h2>
+            <span id="offsideJudgeTag">絵で見る</span>
+          </div>
+
+          <label class="checkline line-toggle">
+            <input type="checkbox" id="offsideLineToggle">
+            <span>守備ラインを表示する</span>
+          </label>
+
+          <div class="offside-board" id="offsideBoard" aria-label="オフサイドの説明図">
+            <div class="field-zone own">じぶん</div>
+            <div class="field-zone attack">あいて</div>
+            <div class="half-line"></div>
+            <div class="goal-line"></div>
+            <div class="offside-line" id="offsideLine"><span>オフサイドライン</span></div>
+            <div class="player attacker passer" id="offsidePasser"><span>味方</span></div>
+            <div class="player attacker receiver" id="offsideReceiver"><span>受ける</span></div>
+            <div class="player defender keeper" id="offsideKeeper"><span>GK</span></div>
+            <div class="player defender defender-one" id="offsideDefenderOne"><span>守備</span></div>
+            <div class="player defender defender-two" id="offsideDefenderTwo"><span>守備</span></div>
+            <div class="player defender defender-three" id="offsideDefenderThree"><span>守備</span></div>
+            <div class="ball" id="offsideBall"></div>
+          </div>
+
+          <div class="offside-step" id="offsideStep">
+            <strong>パスが出た瞬間を見る</strong>
+            <p>ボールをけった瞬間、受ける子がどこにいるかを見よう。</p>
+          </div>
+
+        </section>
+
+        <section class="quiz-panel">
+          <div class="section-head">
+            <h2>これはどっち？</h2>
+            <span id="offsideQuizCount">1問</span>
+          </div>
+          <p class="mini-copy" id="offsideQuestion">この場面はオフサイド？</p>
+          <div class="quiz-choices">
+            <button class="quiz-choice" id="offsideAnswerOff" type="button">オフサイド</button>
+            <button class="quiz-choice" id="offsideAnswerSafe" type="button">セーフ</button>
+          </div>
+          <div class="quiz-feedback" id="offsideFeedback" hidden></div>
+          <div class="timer-actions">
+            <button class="primary-action" id="playOffside" type="button" disabled>動かして見る</button>
+            <button class="secondary-action" id="resetOffside" type="button" disabled>もう一回</button>
+            <button class="secondary-action" id="nextOffside" type="button" disabled>次の問題</button>
+          </div>
+        </section>
       </section>
 
       <section class="screen" id="screen-quiz">

@@ -1,4 +1,4 @@
-const CACHE_NAME = "soccer-support-v5";
+const CACHE_NAME = "soccer-support-v7";
 
 const APP_ASSETS = [
   "./",
